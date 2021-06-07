@@ -1,0 +1,9 @@
+<button (click)="requestWithInterval()">Start Polling</button>
+<br>
+
+<p *ngIf="startedLoading">Loading...</p>
+<p *ngIf="hasError">{{errorMessage}}</p>
+
+<p>Got result at: {{lastResult}}</p>
+<p>Price : {{price}}</p>
+<p>Can add to basket : {{canAddToBasket}}</p>
