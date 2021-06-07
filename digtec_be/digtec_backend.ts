@@ -250,6 +250,7 @@ async function fetchDigitecApi(productData: ProductQuery) {
     if (!response) {
         throw "Response was empty"
     }
+    console.log(response.status)
     let responseData = await response.json();
     if (responseData) {
         return responseData[0]?.data?.productDetails?.offers
@@ -284,6 +285,5 @@ app.post('/fetchDigitecApi', async (req, res) => {
 })
 
 app.listen(port, async () => {
-    // await initPuppeteer()
     console.log(`Example app listening at http://localhost:${port}`)
 })
