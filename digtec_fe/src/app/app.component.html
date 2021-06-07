@@ -1,3 +1,5 @@
+<p>Product id</p><input [(ngModel)]="productId">
+<br>
 <button (click)="requestWithInterval()">Start Polling</button>
 <button (click)="stopPolling()">Stop Polling</button>
 <p *ngIf="shouldPoll">Polling...</p>
