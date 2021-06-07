@@ -1,31 +1,40 @@
 import fetch from 'node-fetch';
+
 const express = require('express')
+const nodemailer = require("nodemailer");
+const emailData = require('./emailData.json');
+
+import * as moment from 'moment';
+
+
 
 type ProductQuery = {
-    id: number
-    sectorId: number
+  id: number
+  sectorId: number
 }
 
+let emailSend = false;
+
 async function fetchDigitecApi(productData: ProductQuery) {
-    let response = await fetch('https://www.digitec.ch/api/graphql', {
-        headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:90.0) Gecko/20100101 Firefox/90.0',
-            'Accept': '*/*',
-            'Accept-Language': 'de-CH',
-            'content-type': 'application/json',
-            'Pragma': 'no-cache',
-            'Cache-Control': 'no-cache'
+  let response = await fetch('https://www.digitec.ch/api/graphql', {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:90.0) Gecko/20100101 Firefox/90.0',
+      'Accept': '*/*',
+      'Accept-Language': 'de-CH',
+      'content-type': 'application/json',
+      'Pragma': 'no-cache',
+      'Cache-Control': 'no-cache'
+    },
+    body: JSON.stringify([
+      {
+        operationName: 'PDP_GET_PRODUCT_DETAILS_CRITICAL_DATA_REFETCH',
+        variables: {
+          productId: productData.id,
+          supplierId: null,
+          secondHandSalesOfferId: null,
+          sectorId: productData.sectorId
         },
-        body: JSON.stringify([
-            {
-                operationName: 'PDP_GET_PRODUCT_DETAILS_CRITICAL_DATA_REFETCH',
-                variables: {
-                    productId: productData.id,
-                    supplierId: null,
-                    secondHandSalesOfferId: null,
-                    sectorId: productData.sectorId
-                },
-                query: `query PDP_GET_PRODUCT_DETAILS_CRITICAL_DATA_REFETCH($productId: Int!) {
+        query: `query PDP_GET_PRODUCT_DETAILS_CRITICAL_DATA_REFETCH($productId: Int!) {
                     productDetails: productDetailsV3(productId: $productId) {
                       mandatorSpecificData {
                         isBestseller
@@ -243,26 +252,60 @@ async function fetchDigitecApi(productData: ProductQuery) {
                     __typename
                   }
                 `
-            }
-        ]),
-        method: 'POST',
+      }
+    ]),
+    method: 'POST',
+  });
+  if (!response) {
+    throw "Response was empty"
+  }
+  console.log(response.status)
+  let responseData = await response.json();
+  if (responseData) {
+    if (responseData[0]?.data?.productDetails?.offers[0]?.canAddToBasket) {
+      await sendEmail({
+        name: responseData[0]?.data?.productDetails?.product?.name,
+        brandName: responseData[0]?.data?.productDetails?.product?.brandName,
+      })
+    }
+    return responseData[0]?.data?.productDetails?.offers
+  }
+  throw "Response data not available"
+}
+
+async function sendEmail(productInformation) {
+  if (!emailSend) {
+    moment.locale("de-ch");
+    let transporter = nodemailer.createTransport({
+      host: emailData.host,
+      port: emailData.port,
+      secure: emailData.secure, // true for 465, false for other ports
+      auth: {
+        user: emailData.auth.user, // generated ethereal user
+        pass: emailData.auth.pass, // generated ethereal password
+      },
     });
-    if (!response) {
-        throw "Response was empty"
-    }
-    console.log(response.status)
-    let responseData = await response.json();
-    if (responseData) {
-        return responseData[0]?.data?.productDetails?.offers
-    }
-    throw "Response data not available"
+    let info = await transporter.sendMail({
+      from: emailData.from, // sender address
+      to: emailData.to, // list of receivers
+      subject: "Product available", // Subject line
+      html: "<p>Check digitec now</p>" +
+        "<p>Product now available: </p>" +
+        "<p><b>" + productInformation.brandName + " </b>" +
+        productInformation.name + "</p>" +
+        "<p>Available since " + moment().format('L LTS') + "</p>", // plain text body
+    });
+
+    console.log("Message sent: %s", info.messageId);
+    emailSend = true;
+  }
 }
 
 function createProductData(productId): ProductQuery {
-    return {
-        id: productId,
-        sectorId: 1
-    }
+  return {
+    id: productId,
+    sectorId: 1
+  }
 }
 
 const app = express()
@@ -271,19 +314,19 @@ const port = 3000
 app.use(express.json())
 
 app.get('/', (req, res) => {
-    res.send('Hello World!')
+  res.send('Hello World!')
 })
 
 app.post('/fetchDigitecApi', async (req, res) => {
-    let productData = createProductData(req.body.productData.id);
-    try {
-        let response = await fetchDigitecApi(productData)
-        res.send({ payload: response, status: "SUCCESS", message: null })
-    } catch (error) {
-        res.status(500).send({ payload: null, status: "ERROR", message: "Error: " + error })
-    }
+  let productData = createProductData(req.body.productData.id);
+  try {
+    let response = await fetchDigitecApi(productData)
+    res.send({ payload: response, status: "SUCCESS", message: null })
+  } catch (error) {
+    res.status(500).send({ payload: null, status: "ERROR", message: "Error: " + error })
+  }
 })
 
 app.listen(port, async () => {
-    console.log(`Example app listening at http://localhost:${port}`)
+  console.log(`Example app listening at http://localhost:${port}`)
 })

@@ -7,6 +7,8 @@
 # Only exists if Bazel was run
 /bazel-out
 
+digtec_be/emailData.json
+
 # dependencies
 /node_modules
 digtec_be/node_modules

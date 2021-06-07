@@ -73,13 +73,12 @@ export class AppComponent implements OnInit {
           this.startedLoading = true
         }))),
       retryWhen(errors => errors.pipe(
-        delay(this.delay),
         tap(error => {
           this.hasError = true;
           this.errorMessage = error.message;
           this.stopBeeping()
-        }))));
-
+        }),
+        delay(this.delay))));
     this.digtecSubscription = this.digtecPoller.subscribe();
   }
 
@@ -97,9 +96,17 @@ export class AppComponent implements OnInit {
   }
 
   stopPolling() {
-    this.shouldPoll = false;
     this.digtecSubscription.unsubscribe()
     this.stopBeeping();
+    this.resetData()
+  }
+
+  resetData() {
+    this.startedLoading = false;
+    this.shouldPoll = false;
+    this.lastResult = ""
+    this.price = ""
+    this.canAddToBasket = undefined;
   }
 
   callDigitec(): Observable<any> {
