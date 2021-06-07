@@ -1,89 +1,289 @@
-import { Browser, Page } from "puppeteer-core";
-
-const puppeteer = require('puppeteer')
+import fetch from 'node-fetch';
 const express = require('express')
 
-let config = {
-    launchOptions: {
-        // headless: false,
-        // executablePath: '/usr/bin/chromium-browser'
-    }
+type ProductQuery = {
+    id: number
+    sectorId: number
 }
 
-let browser: Browser;
-let page: Page;
-
-let offersPromise: Promise<any> | null;
-let offersResolve: ((value: any) => void) | null = null;
-
-async function initPuppeteer() {
-    browser = await puppeteer.launch(config.launchOptions);
-    page = await browser.newPage()
-    await page.setDefaultNavigationTimeout(0);
-
-    page.on('response', async (response) => {
-        if (response.url() === "https://www.digitec.ch/api/graphql") {
-            const data = JSON.parse(response.request().postData())
-            if (
-                data &&
-                data[0] &&
-                data[0].operationName &&
-                data[0].operationName === "PDP_GET_PRODUCT_DETAILS_CRITICAL_DATA_REFETCH"
-            ) {
-                console.log(await response.status())
-                let responseData = await response.json();
-                if (offersResolve) {
-                    offersResolve(responseData[0].data.productDetails.offers)
-                }
+async function fetchDigitecApi(productData: ProductQuery) {
+    let response = await fetch('https://www.digitec.ch/api/graphql', {
+        headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:90.0) Gecko/20100101 Firefox/90.0',
+            'Accept': '*/*',
+            'Accept-Language': 'de-CH',
+            'content-type': 'application/json',
+            'Pragma': 'no-cache',
+            'Cache-Control': 'no-cache'
+        },
+        body: JSON.stringify([
+            {
+                operationName: 'PDP_GET_PRODUCT_DETAILS_CRITICAL_DATA_REFETCH',
+                variables: {
+                    productId: productData.id,
+                    supplierId: null,
+                    secondHandSalesOfferId: null,
+                    sectorId: productData.sectorId
+                },
+                query: `query PDP_GET_PRODUCT_DETAILS_CRITICAL_DATA_REFETCH($productId: Int!) {
+                    productDetails: productDetailsV3(productId: $productId) {
+                      mandatorSpecificData {
+                        isBestseller
+                        isDeleted
+                        showroomSites
+                        sectorIds
+                        __typename
+                      }
+                      product {
+                        id
+                        productId
+                        name
+                        nameProperties
+                        productTypeId
+                        productTypeName
+                        brandId
+                        brandName
+                        averageRating
+                        totalRatings
+                        totalQuestions
+                        isProductSet
+                        images {
+                          url
+                          height
+                          width
+                          __typename
+                        }
+                        energyEfficiency {
+                          energyEfficiencyColorType
+                          energyEfficiencyLabelText
+                          energyEfficiencyLabelSigns
+                          energyEfficiencyImage {
+                            url
+                            height
+                            width
+                            __typename
+                          }
+                          __typename
+                        }
+                        seo {
+                          seoProductTypeName
+                          seoNameProperties
+                          productGroups {
+                            productGroup1
+                            productGroup2
+                            productGroup3
+                            productGroup4
+                            __typename
+                          }
+                          __typename
+                        }
+                        lowQualityImagePlaceholder
+                        hasVariants
+                        __typename
+                      }
+                      offers {
+                        ...ProductDetailsOffer
+                        __typename
+                      }
+                      __typename
+                    }
+                  }
+                  
+                  fragment ProductDetailsOffer on ProductDetailOffer {
+                    id
+                    productId
+                    offerId
+                    shopOfferId
+                    price {
+                      amountIncl
+                      amountExcl
+                      currency
+                      fraction
+                      __typename
+                    }
+                    deliveryOptions {
+                      mail {
+                        classification
+                        futureReleaseDate
+                        __typename
+                      }
+                      pickup {
+                        siteId
+                        classification
+                        futureReleaseDate
+                        __typename
+                      }
+                      detailsProvider {
+                        productId
+                        offerId
+                        quantity
+                        type
+                        __typename
+                      }
+                      certainty
+                      __typename
+                    }
+                    supplier {
+                      name
+                      countryIsoCode
+                      countryName
+                      customsType
+                      link
+                      __typename
+                    }
+                    label
+                    type
+                    volumeDiscountPrices {
+                      minAmount
+                      price {
+                        amountIncl
+                        amountExcl
+                        currency
+                        __typename
+                      }
+                      isDefault
+                      __typename
+                    }
+                    salesInformation {
+                      numberOfItems
+                      numberOfItemsSold
+                      isEndingSoon
+                      __typename
+                    }
+                    incentiveText
+                    isIncentiveCashback
+                    isNew
+                    isSalesPromotion
+                    hideInProductDiscovery
+                    canAddToBasket
+                    hidePrice
+                    insteadOfPrice {
+                      type
+                      price {
+                        amountIncl
+                        amountExcl
+                        currency
+                        fraction
+                        __typename
+                      }
+                      __typename
+                    }
+                    minOrderQuantity
+                    hasMobileSubscription
+                    secondHandOfferInfo {
+                      conditions {
+                        name
+                        value
+                        description
+                        __typename
+                      }
+                      generalCondition {
+                        name
+                        value
+                        description
+                        __typename
+                      }
+                      description
+                      sellerCustomerId
+                      images {
+                        fileUrl
+                        description
+                        width
+                        height
+                        __typename
+                      }
+                      warranty {
+                        title
+                        description
+                        tooltip
+                        isSpecificWarranty
+                        __typename
+                      }
+                      __typename
+                    }
+                    returnText {
+                      title
+                      description
+                      __typename
+                    }
+                    warrantyOverviews {
+                      title
+                      description
+                      __typename
+                    }
+                    digitecConnect {
+                      months
+                      value
+                      type
+                      __typename
+                    }
+                    specifications {
+                      title
+                      description
+                      link
+                      type
+                      properties {
+                        name
+                        propertyId
+                        description
+                        descriptionLink
+                        type
+                        values {
+                          value
+                          description
+                          descriptionLink
+                          link
+                          propertyDefinitionOptionId
+                          __typename
+                        }
+                        __typename
+                      }
+                      __typename
+                    }
+                    __typename
+                  }
+                `
             }
-        }
-    })
-    // https://www.digitec.ch/de/s1/product/msi-geforce-rtx-3080-ti-suprim-x-12g-12gb-grafikkarte-15950523
-    // https://www.digitec.ch/de/s1/product/msi-geforce-rtx-3080-suprim-x-10g-10gb-grafikkarte-14370977
-    await page.goto("https://www.digitec.ch/de/s1/product/msi-geforce-rtx-3080-ti-suprim-x-12g-12gb-grafikkarte-15950523")
+        ]),
+        method: 'POST',
+    });
+    if (!response) {
+        throw "Response was empty"
+    }
+    let responseData = await response.json();
+    if (responseData) {
+        return responseData[0]?.data?.productDetails?.offers
+    }
+    throw "Response data not available"
 }
 
-
-async function fetchDigitecData() {
-    if (!browser) {
-        return;
+function createProductData(productId): ProductQuery {
+    return {
+        id: productId,
+        sectorId: 1
     }
-
-    if (offersPromise) {
-        return await offersPromise;
-    }
-
-    offersPromise = new Promise((resolve, reject) => {
-        offersResolve = resolve;
-        page.reload()
-        setTimeout(reject, 5*60*1000)
-    });
-
-    const offers = await offersPromise;
-
-    offersPromise = null;
-    offersResolve = null;
-
-    return offers;
 }
 
 const app = express()
 const port = 3000
 
+app.use(express.json())
+
 app.get('/', (req, res) => {
     res.send('Hello World!')
 })
 
-app.get('/digitec', async (req, res) => {
+app.post('/fetchDigitecApi', async (req, res) => {
+    let productData = createProductData(req.body.productData.id);
     try {
-        let data = await fetchDigitecData();
-        res.send({payload: data, status: "SUCCESS", message: null})
+        let response = await fetchDigitecApi(productData)
+        res.send({ payload: response, status: "SUCCESS", message: null })
     } catch (error) {
-        res.status(500).send({payload: null, status: "ERROR", message: "Error: " + error})
+        res.status(500).send({ payload: null, status: "ERROR", message: "Error: " + error })
     }
 })
 
 app.listen(port, async () => {
-    await initPuppeteer()
+    // await initPuppeteer()
     console.log(`Example app listening at http://localhost:${port}`)
 })

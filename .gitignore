@@ -10,6 +10,7 @@
 # dependencies
 /node_modules
 digtec_be/node_modules
+digtec_fe/node_modules
 
 # profiling files
 chrome-profiler-events*.json
