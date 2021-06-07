@@ -1,4 +1,8 @@
 <button (click)="requestWithInterval()">Start Polling</button>
+<button (click)="stopPolling()">Stop Polling</button>
+<p *ngIf="shouldPoll">Polling...</p>
+<p *ngIf="!shouldPoll">Paused</p>
+
 <br>
 
 <p *ngIf="startedLoading">Loading...</p>
