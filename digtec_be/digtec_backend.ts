@@ -77,8 +77,7 @@ app.get('/', (req, res) => {
 app.get('/digitec', async (req, res) => {
     try {
         let data = await fetchDigitecData();
-        // res.send({payload: data, status: "SUCCESS", message: null})
-        res.send({payload: data, status: "ERROR", message: "LOL"})
+        res.send({payload: data, status: "SUCCESS", message: null})
     } catch (error) {
         res.status(500).send({payload: null, status: "ERROR", message: "Error: " + error})
     }

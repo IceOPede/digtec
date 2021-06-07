@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
 import { switchMap, repeat, delay } from 'rxjs/operators';
 import * as moment from 'moment';
+import fetch from 'node-fetch';
 
 @Component({
   selector: 'app-root',
@@ -33,7 +34,7 @@ export class AppComponent implements OnInit {
 
       this.startedLoading = false;
 
-      if(result.status === "ERROR"){
+      if (result.status === "ERROR") {
         this.hasError = true;
         this.errorMessage = result.message;
         return of(result).toPromise();
@@ -43,18 +44,18 @@ export class AppComponent implements OnInit {
       this.errorMessage = "";
 
       this.lastResult = moment().format('L LTS')
-      if(result.payload[0].price){
+      if (result.payload[0].price) {
         this.price = result.payload[0].price.amountIncl;
       } else {
         this.price = "Unavailable"
       }
-      if(result.payload[0].canAddToBasket){
+      if (result.payload[0].canAddToBasket) {
         this.canAddToBasket = "yes";
       } else {
         this.canAddToBasket = "no"
       }
       return of(result).toPromise();
-    }), delay(30*1000), repeat(-1));
+    }), delay(30 * 1000), repeat(-1));
     source$.subscribe(result => {
       this.startedLoading = true
     });
