@@ -29,13 +29,13 @@ export class AppComponent implements OnInit {
 
   private delay = 30 * 1000;
 
-  public productId: number
+  public productId: string
 
   constructor(private httpClient: HttpClient) { }
 
   ngOnInit(): void {
     moment.locale("de-ch");
-    this.productId = 15950523
+    this.productId = "15950523"
   }
 
   requestWithInterval() {
@@ -82,6 +82,6 @@ export class AppComponent implements OnInit {
 
   callDigitec(): Observable<any> {
     this.startedLoading = true
-    return this.httpClient.post("/fetchDigitecApi", {productData: {id: this.productId}})
+    return this.httpClient.post("/fetchDigitecApi", {productData: {id: Number.parseInt(this.productId)}})
   }
 }
