@@ -1,12 +1,29 @@
 import fetch from 'node-fetch';
 
+import { Subscription, interval } from 'rxjs';
+import { delay, take, tap } from 'rxjs/operators';
+
 const express = require('express')
 const nodemailer = require("nodemailer");
 const emailData = require('./emailData.json');
 
 import * as moment from 'moment';
 
+enum LaunchMode {
+  WEBSITE_RUN,
+  NIGHTLY_RUN
+}
 
+enum State {
+  RUNNING = "Running",
+  STOPPED = "Stopped"
+}
+
+const callDelay = 30 * 1000;
+
+let currentLunchMode: LaunchMode | null;
+let currentState: State = State.STOPPED;
+let fetchSubscription: Subscription;
 
 type ProductQuery = {
   id: number
@@ -298,6 +315,7 @@ async function sendEmail(productInformation) {
 
     console.log("Message sent: %s", info.messageId);
     emailSend = true;
+    fetchSubscription.unsubscribe();
   }
 }
 
@@ -318,14 +336,49 @@ app.get('/', (req, res) => {
 })
 
 app.post('/fetchDigitecApi', async (req, res) => {
-  let productData = createProductData(req.body.productData.id);
-  try {
-    let response = await fetchDigitecApi(productData)
-    res.send({ payload: response, status: "SUCCESS", message: null })
-  } catch (error) {
-    res.status(500).send({ payload: null, status: "ERROR", message: "Error: " + error })
+  if (currentLunchMode && currentLunchMode === LaunchMode.NIGHTLY_RUN) {
+    res.send({ payload: null, status: "ERROR", message: "Please stop nighly run first" })
+  } else {
+    currentLunchMode = LaunchMode.WEBSITE_RUN
+    let productData = createProductData(req.body.productData.id);
+    try {
+      let response = await fetchDigitecApi(productData)
+      res.send({ payload: response, status: "SUCCESS", message: null })
+    } catch (error) {
+      res.status(500).send({ payload: null, status: "ERROR", message: "Error: " + error })
+    }
   }
 })
+
+
+app.post('/start', async (req, res) => {
+  currentLunchMode = LaunchMode.NIGHTLY_RUN
+  currentState = State.RUNNING
+  let productData = createProductData(req.body.productData.id);
+  loopingCalls(productData);
+
+  res.send({ status: currentState.toString() })
+})
+
+app.get('/stop', async (req, res) => {
+  currentLunchMode = null
+  if (currentState === State.RUNNING && fetchSubscription) {
+    fetchSubscription.unsubscribe();
+  }
+  currentState = State.STOPPED
+  res.send({ status: currentState.toString() })
+})
+
+app.get('/getStatus', async (req, res) => {
+  res.send({ status: currentState.toString() })
+})
+
+function loopingCalls(productData) {
+  fetchSubscription = interval(callDelay).pipe(
+    take(2000),
+    tap(async () => await fetchDigitecApi(productData))
+  ).subscribe()
+}
 
 app.listen(port, async () => {
   console.log(`Example app listening at http://localhost:${port}`)

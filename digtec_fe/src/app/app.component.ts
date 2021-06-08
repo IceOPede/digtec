@@ -30,6 +30,8 @@ export class AppComponent implements OnInit {
 
   private delay = 30 * 1000;
 
+  public status;
+
   public productId: string
 
   constructor(private httpClient: HttpClient) { }
@@ -37,6 +39,7 @@ export class AppComponent implements OnInit {
   ngOnInit(): void {
     moment.locale("de-ch");
     this.productId = "15950523"
+    this.getStatus()
   }
 
   requestWithInterval() {
@@ -106,7 +109,26 @@ export class AppComponent implements OnInit {
     this.shouldPoll = false;
     this.lastResult = ""
     this.price = ""
+    this.errorMessage = ""
     this.canAddToBasket = undefined;
+  }
+
+  startNightly() {
+    this.httpClient.post("/start", { productData: { id: Number.parseInt(this.productId) } }).subscribe((result: any) => {
+      this.status = result.status;
+    })
+  }
+
+  stopNightly() {
+    this.httpClient.get("/stop").subscribe((result: any) => {
+      this.status = result.status;
+    })
+  }
+
+  getStatus() {
+    this.httpClient.get("/getStatus").subscribe((result: any) => {
+      this.status = result.status;
+    })
   }
 
   callDigitec(): Observable<any> {

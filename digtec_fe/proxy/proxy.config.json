@@ -1,5 +1,14 @@
 {
     "/fetchDigitecApi": {
         "target": "http://localhost:3000/"
+    },
+    "/stop": {
+        "target": "http://localhost:3000/"
+    },
+    "/start": {
+        "target": "http://localhost:3000/"
+    },
+    "/getStatus": {
+        "target": "http://localhost:3000/"
     }
 }
