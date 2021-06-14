@@ -19,7 +19,9 @@ enum State {
   STOPPED = "Stopped"
 }
 
-const callDelay = 30 * 1000;
+const callDelay = 60 * 1000;
+
+
 
 let currentLunchMode: LaunchMode | null;
 let currentState: State = State.STOPPED;
@@ -276,7 +278,7 @@ async function fetchDigitecApi(productData: ProductQuery) {
   if (!response) {
     throw "Response was empty"
   }
-  console.log(response.status)
+  console.log(moment().format('L LTS') + ": "+ response.status)
   let responseData = await response.json();
   if (responseData) {
     if (responseData[0]?.data?.productDetails?.offers[0]?.canAddToBasket) {
@@ -292,7 +294,6 @@ async function fetchDigitecApi(productData: ProductQuery) {
 
 async function sendEmail(productInformation) {
   if (!emailSend) {
-    moment.locale("de-ch");
     let transporter = nodemailer.createTransport({
       host: emailData.host,
       port: emailData.port,
@@ -325,6 +326,8 @@ function createProductData(productId): ProductQuery {
     sectorId: 1
   }
 }
+
+moment.locale("de-ch");
 
 const app = express()
 const port = 3000
