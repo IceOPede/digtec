@@ -4,7 +4,7 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "start-tec": "ng serve --proxy-config proxy/proxy.config.json --host 0.0.0.0",
+    "start-tec": "ng serve --proxy-config proxy/proxy.config.json --host 10.1.1.31",
     "build": "ng build",
     "test": "ng test",
     "lint": "ng lint",
