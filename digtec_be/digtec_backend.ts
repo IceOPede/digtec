@@ -4,7 +4,11 @@ import { Subscription, interval } from 'rxjs';
 import { delay, take, tap } from 'rxjs/operators';
 
 const express = require('express')
+const session = require('express-session')
+
+const path = require('path')
 const nodemailer = require("nodemailer");
+
 const emailData = require('./emailData.json');
 
 import * as moment from 'moment';
@@ -332,10 +336,13 @@ moment.locale("de-ch");
 const app = express()
 const port = 3000
 
+app.use(session({ secret: 'zz', resave: true, saveUninitialized: true }))
+app.use(express.static(path.join(__dirname, '../digtec_fe/dist/digitec')))
+
 app.use(express.json())
 
-app.get('/', (req, res) => {
-  res.send('Hello World!')
+app.get('*', (req, res) => {
+	return res.sendFile(path.join(__dirname, '../digtec_fe/dist/digitec'))  
 })
 
 app.post('/fetchDigitecApi', async (req, res) => {
